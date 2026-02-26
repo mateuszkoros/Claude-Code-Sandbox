@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  squid-proxy:
+    image: ubuntu/squid:latest
+    container_name: claude-squid-proxy
+    restart: unless-stopped
+    volumes:
+      - ./squid-config/squid.conf:/etc/squid/squid.conf:ro,Z
+      - squid-logs:/var/log/squid
+    networks:
+      internal_net:
+        ipv4_address: 172.20.0.2
+      external_net: {}
+    healthcheck:
+      test: ["CMD", "squid", "-k", "check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  claude-code:
+    build: .
+    container_name: claude-code
+    hostname: Claude
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./workspace:/workspace:Z
+      - /etc/localtime:/etc/localtime:ro
+      - ~/.claude:/root/.claude:Z
+    networks:
+      internal_net:
+        ipv4_address: 172.20.0.3
+    depends_on:
+      squid-proxy:
+        condition: service_healthy
+    environment:
+      - HTTP_PROXY=http://172.20.0.2:3128
+      - HTTPS_PROXY=http://172.20.0.2:3128
+      - NO_PROXY=localhost,127.0.0.1
+    working_dir: /workspace
+
+networks:
+  # Internal network - no direct internet access
+  internal_net:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  
+  # External network - only proxy can access
+  external_net:
+    driver: bridge
+
+volumes:
+  squid-logs:
