@@ -14,7 +14,7 @@
              │ Volume mounts
              ↓
 ┌──────────────────────────────────────────────┐
-│ Podman Pod - Internal Network ONLY           │
+│ Podman Compose - Internal Network            │
 │                                              │
 │  ┌────────────────────────────────────────┐  │
 │  │ Claude Code Container                  │  │
@@ -105,18 +105,18 @@ claude
 ## Project Structure
 ```
 claude-code-sandbox/
-├── podman-compose.yml         # Main configuration
+├── podman-compose.yaml        # Main configuration
 ├── Containerfile              # Claude Code container image
 ├── squid-config/
 │   └── squid.conf             # Proxy filtering rules
 ├── .gitignore                 # Don't commit secrets
-├── .README.md                 # This file
+├── README.md                  # This file
 └── workspace/                 # Your project directory
 ```
 
 ## Configuration
 
-### Basic Setup (podman-compose.yml)
+### Basic Setup (podman-compose.yaml)
 
 ```yaml
 networks:
@@ -126,12 +126,12 @@ networks:
 services:
   claude-code:
     volumes:
-      - ~/projects/my-project:/workspace:Z    # Your project
-      - ~/.claude:/root/.claude:Z             # Persistent auth
-      - /etc/localtime:/etc/localtime:ro      # Timezone
+      - ./workspace:/workspace:Z             # Project files
+      - ~/.claude:/root/.claude:Z            # Persistent auth
+      - /etc/localtime:/etc/localtime:ro     # Timezone
 ```
 
-**Important:** Change `~/projects/my-project` to your actual project path.
+**To use an external project:** Change `./workspace` to an absolute path like `~/my-project:/workspace:Z`
 
 ### Advanced: Whitelist-Only Mode
 
